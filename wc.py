@@ -4,7 +4,6 @@ count_states = {
     "-c": False
 }
 
-
 # paths: [path1, path2, path3, ...]
 # flags: ['-w', '-l']
 def count(path, flags):
@@ -28,6 +27,10 @@ def count(path, flags):
                 if flag in count_states:
                     count_states[flag] = True
                 else:
+                    # '-m' in wc but not in wc.py
+                    if flag == '-m':
+                        print('We don’t handle that situation yet!')
+                        sys.exit()
                     # handle illegal flag
                     return ['flag error', flag]
 
@@ -43,18 +46,21 @@ def count(path, flags):
 
             return [*res, path]
 
-    except FileNotFoundError:
+    except (FileNotFoundError, IsADirectoryError):
         print('wc: {}: open: No such file or directory'.format(path))
 
 
 # params like: [2, 3, 'testinputs/etest.txt']
 def generate_output(params):
-    return "\t" + "\t".join(str(param) for param in params)
+    return '\t' + '\t'.join(str(param) for param in params)
 
 
 if __name__ == "__main__":
     import sys
+
+    has_exception = False
     arguments = list(sys.argv[1:])
+
     if len(arguments) == 0:
         print('We don’t handle that situation yet!')
         sys.exit()
@@ -69,6 +75,10 @@ if __name__ == "__main__":
         else:
             paths = arguments[index:]
             break
+
+    if len(paths) == 0:
+        print('We don’t handle that situation yet!')
+        sys.exit()
 
     totals = []  # for the 'totals' line
 
@@ -88,10 +98,10 @@ if __name__ == "__main__":
             pass
 
     # total_res for the 'totals' line'
-    if len(totals) > 1:
+    if len(paths) > 1:
         total_res = [0] * len(totals[0])
         for nums in totals:
             for index, num in enumerate(total_res):
                 total_res[index] += nums[index]
         total_res = [*total_res, 'total']
-        print("\t" + "\t".join(str(item) for item in total_res))
+        print('\t' + '\t'.join(str(item) for item in total_res))
