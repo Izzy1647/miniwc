@@ -5,10 +5,9 @@ count_states = {
 }
 
 
-def count(input):
-    path = input[-1]
-    flags = input[0:len(input)-1]
-
+# paths: [path1, path2, path3, ...]
+# flags: ['-w', '-l']
+def count(path, flags):
     try:
         with open(path, 'rb') as file:
 
@@ -44,19 +43,29 @@ def count(input):
         print('wc: {}: open: No such file or directory'.format(path))
 
 
+# params like: [2, 3, 'testinputs/etest.txt']
 def generate_output(params):
     return "\t" + "\t".join(str(param) for param in params)
 
 
 if __name__ == "__main__":
     import sys
-    if len(sys.argv) > 5:
-        print('We don’t handle that situation yet!')
-    else:
-        arguments = list(sys.argv[1:])
-        try:
-            counts = count(arguments)
+    arguments = list(sys.argv[1:])
+    flags = []
+    paths = []
 
+    # extract flags and paths from inputs
+    for index, arg in enumerate(arguments):
+        if arg[0] == '-' and len(arg) > 1:
+            flags.append(arg)
+        else:
+            paths = arguments[index:]
+            break
+
+    # handle each path via count() function
+    for path in paths:
+        try:
+            counts = count(path, flags)
             # handle illegal flags
             if counts[0] == 'flag error':
                 print('wc: illegal option -- {}'.format(counts[1][1:]))
