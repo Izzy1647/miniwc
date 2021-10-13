@@ -29,6 +29,7 @@ def count(path, flags):
                 else:
                     # '-m' in wc but not in wc.py
                     if flag == '-m':
+                        # put msg into sys.exit() as a parameter
                         print('We don’t handle that situation yet!')
                         sys.exit()
                     # handle illegal flag
