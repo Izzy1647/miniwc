@@ -86,9 +86,9 @@ if __name__ == "__main__":
         if invalid_flag == '-m':
             print('We don’t handle that situation yet!')
             sys.exit()
-        sys.stderr.write('wc: illegal option -%s\n' % invalid_flag, )
-        sys.stderr.write('usage: wc [-clw] [file ...]\n')
-        sys.exit(2)
+        print('wc: illegal option -%s\n' % invalid_flag)
+        print('usage: wc [-clw] [file ...]\n')
+        sys.exit()
 
     flags = []
     paths = valid_args.paths
