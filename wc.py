@@ -4,6 +4,7 @@ count_states = {
     "-c": False
 }
 
+
 # paths: [path1, path2, path3, ...]
 # flags: ['-w', '-l']
 def count(path, flags):
@@ -51,37 +52,56 @@ def count(path, flags):
         print('wc: {}: open: No such file or directory'.format(path))
 
 
-# params like: [2, 3, 'testinputs/etest.txt']
+# params like: [2, 3, 'testinputs/text.txt']
 def generate_output(params):
     return '\t' + '\t'.join(str(param) for param in params)
 
 
 if __name__ == "__main__":
     import sys
+    import argparse
 
-    has_exception = False
-    arguments = list(sys.argv[1:])
-
-    if len(arguments) == 0:
+    # No arguments: better to use sys.argv than argparse
+    if len(sys.argv) <= 1:
         print('We don’t handle that situation yet!')
         sys.exit()
+
+    parser = argparse.ArgumentParser(description='word count')
+
+    # flag arguments
+    parser.add_argument('-l', action='store_true', help='count lines in the file')
+    parser.add_argument('-w', action='store_true', help='count words in the file')
+    parser.add_argument('-c', action='store_true', help='count bytes in the file')
+
+    # path arguments
+    parser.add_argument('paths', metavar='paths', type=str, nargs='*', help='file path')
+
+    # use parse_known_args() to customize invalid flags error
+    args = parser.parse_known_args()
+    valid_args = args[0]
+    invalid_args = args[1]
+
+    if len(invalid_args):
+        invalid_flag = invalid_args[0]
+        if invalid_flag == '-m':
+            print('We don’t handle that situation yet!')
+            sys.exit()
+        sys.stderr.write('wc: illegal option -%s\n' % invalid_flag, )
+        sys.stderr.write('usage: wc [-clw] [file ...]\n')
+        sys.exit(2)
 
     flags = []
-    paths = []
+    paths = valid_args.paths
 
-    # extract flags and paths from inputs
-    for index, arg in enumerate(arguments):
-        if arg[0] == '-' and len(arg) > 1:
-            flags.append(arg)
-        else:
-            paths = arguments[index:]
-            break
+    if valid_args.l:
+        flags.append('-l')
+    if valid_args.w:
+        flags.append('-w')
+    if valid_args.c:
+        flags.append('-c')
 
-    if len(paths) == 0:
-        print('We don’t handle that situation yet!')
-        sys.exit()
-
-    totals = []  # for the 'totals' line
+    # 'totals' line at bottom
+    totals = []
 
     # handle each path via count() function
     for path in paths:
