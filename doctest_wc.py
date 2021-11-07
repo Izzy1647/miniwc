@@ -45,13 +45,9 @@ b'\\t2\\t3\\t11\\ttestinputs/emoji.txt\\n\\t10\\t12\\t124\\ttestinputs/html.html
 >>> subprocess.check_output('python3 wc.py testinputs/emoji.txt testinputs/html.htm', shell=True)
 b'\\t2\\t3\\t11\\ttestinputs/emoji.txt\\nwc: testinputs/html.htm: open: No such file or directory\\n\\t2\\t3\\t11\\ttotal\\n'
 
->>> # no arguments
->>> subprocess.check_output('python3 wc.py', shell=True)
-b'We don\\xe2\\x80\\x99t handle that situation yet!\\n'
-
 >>> # -m (in wc but not in wc.py, can't handle yet!)
 >>> subprocess.check_output('python3 wc.py -m testinputs/empty_test.txt', shell=True)
-b'We don\\xe2\\x80\\x99t handle that situation yet!\\n'
+b'\\t0\\ttestinputs/empty_test.txt\\n'
 
 >>> # binary files, goes wrong, however hard to solve it
 >>> subprocess.check_output('python3 wc.py testinputs/pdf.pdf', shell=True)

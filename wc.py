@@ -1,7 +1,9 @@
 count_states = {
     "-l": False,
     "-w": False,
-    "-c": False
+    "-c": False,
+    "-m": False,
+    "-L": False
 }
 
 
@@ -54,95 +56,93 @@ def print_help():
     sys.exit()
 
 
-# paths: [path1, path2, path3, ...]
-# flags: ['-w', '-l']
-def count(path, flags):
-    try:
-        with open(path, 'rb') as file:
+def count_from_bytes(bytes, flags, path):
+    # get all counts
+    line_count = bytes.count(b'\n')
+    word_count = len(bytes.split())
+    byte_count = len(bytes)
+    character_count = byte_count
 
-            # get all counts
-            bytes_read = file.read()
-            line_count = bytes_read.count(b'\n')
-            word_count = len(bytes_read.split())
-            byte_count = len(bytes_read)
+    lines = bytes.split(b'\n')
+    max_line_length = len(max(lines, key=len))
 
-            # determine what contained in output by input flags
-            flag_map = {
-                '-l': line_count,
-                '-w': word_count,
-                '-c': byte_count
-            }
+    # determine what contained in output by input flags
+    flag_map = {
+        '-l': line_count,
+        '-w': word_count,
+        '-c': byte_count,
+        '-m': character_count,
+        '-L': max_line_length
+    }
 
-            # handle version & help
-            if '-v' in flags:
-                print_version()
-            if '-h' in flags:
-                print_help()
+    # handle version & help
+    if '-v' in flags:
+        print_version()
+    if '-h' in flags:
+        print_help()
 
-            for flag in flags:
-                if flag in count_states:
-                    count_states[flag] = True
-                else:
-                    # '-m' in wc but not in wc.py
-                    if flag == '-m':
-                        # put msg into sys.exit() as a parameter
-                        print('We don’t handle that situation yet!')
-                        sys.exit()
-                    # handle illegal flag
-                    return ['flag error', flag]
+    for flag in flags:
+        if flag in count_states:
+            count_states[flag] = True
+        else:
+            return ['flag error', flag]
 
-            # generate output
-            res = []
-            if len(flags) == 0:
-                # no flags, show'em all
-                res = [line_count, word_count, byte_count]
-            else:
-                for k in flag_map:
-                    if count_states[k]:
-                        res.append(flag_map[k])
+    # generate output
+    res = []
+    if len(flags) == 0:
+        # no flags, show'em all
+        res = [line_count, word_count, byte_count]
+    else:
+        for k in flag_map:
+            if count_states[k]:
+                res.append(flag_map[k])
 
-            return [*res, path]
-
-    except (FileNotFoundError, IsADirectoryError):
-        print('wc: {}: open: No such file or directory'.format(path))
+    return [*res, path]
 
 
-# params like: [2, 3, 'testinputs/text.txt']
-def generate_output(params):
-    return '\t' + '\t'.join(str(param) for param in params)
-
-
-if __name__ == "__main__":
-    import sys
-    import argparse
-
-    # No arguments: better to use sys.argv than argparse
-    if len(sys.argv) <= 1:
-        print('We don’t handle that situation yet!')
-        sys.exit()
-
+def handle_input():
     parser = argparse.ArgumentParser(description='word count')
 
     # flag arguments
     parser.add_argument('-l', '--lines', action='store_true', help='count lines in the file')
     parser.add_argument('-w', '--words', action='store_true', help='count words in the file')
     parser.add_argument('-c', '--bytes', action='store_true', help='count bytes in the file')
+    parser.add_argument('-m', '--chars', action='store_true', help='count characters in the file')
+    parser.add_argument('-L', '--max-line-length', action='store_true', help='length of longest line')
+
     parser.add_argument('--v', '--version', action='store_true', help='version info')
     parser.add_argument('--h', action='store_true', help='help info')
 
     # path arguments
     parser.add_argument('paths', metavar='paths', type=str, nargs='*', help='file path')
 
+    parser.add_argument('--files0-from', metavar='files0', type=str, help='files0')
+
     # use parse_known_args() to customize invalid flags error
     args = parser.parse_known_args()
     valid_args = args[0]
     invalid_args = args[1]
 
+    # handle valid_args.files0_from
+    if valid_args.files0_from:
+        file0 = valid_args.files0_from
+        try:
+            with open(file0) as f:
+                content = f.read()
+                if content.find('\x00') == -1:
+                    print('wc: \'{}\' : No such file or directory'.format(content))
+                # else:
+
+        except FileNotFoundError:
+            print('wc: cannot open \'{}\' for reading: No such file or directory'.format(file0))
+        except IsADirectoryError:
+            print('wc: {}: read error: Is a directory'.format(file0))
+
+        print(valid_args.files0_from)
+        sys.exit()
+
     if len(invalid_args):
         invalid_flag = invalid_args[0]
-        if invalid_flag == '-m':
-            print('We don’t handle that situation yet!')
-            sys.exit()
         print('wc: illegal option -%s\n' % invalid_flag)
         print('usage: wc [-clw] [file ...]\n')
         sys.exit()
@@ -156,28 +156,33 @@ if __name__ == "__main__":
         flags.append('-w')
     if valid_args.bytes:
         flags.append('-c')
+    if valid_args.chars:
+        flags.append('-m')
     if valid_args.v:
         flags.append('-v')
     if valid_args.h:
         flags.append('-h')
+    if valid_args.max_line_length:
+        flags.append('-L')
 
     # 'totals' line at bottom
     totals = []
 
-    # handle each path via count() function
+    # handle each path via count_from_bytes() function
     for path in paths:
         try:
-            # save figures for 'totals' line
-            counts = count(path, flags)
-            figures = counts[0: len(counts)-1]
-            totals.append(figures)
+            with open(path, 'rb') as file:
+                counts = count_from_bytes(file.read(), flags, path)
+                figures = counts[0: len(counts) - 1]
+                totals.append(figures)
 
-            # handle illegal flags
-            output = 'wc: illegal option -- {}'.format(counts[1][1:]) if counts[0] == 'flag error' else generate_output(counts)
-            print(output)
-
-        except TypeError:
-            pass
+                # handle illegal flags
+                output = 'wc: illegal option -- {}'.format(counts[1][1:]) \
+                    if counts[0] == 'flag error' \
+                    else generate_output(counts)
+                print(output)
+        except (FileNotFoundError, IsADirectoryError):
+            print('wc: {}: open: No such file or directory'.format(path))
 
     # total_res for the 'totals' line'
     if len(paths) > 1:
@@ -187,3 +192,21 @@ if __name__ == "__main__":
                 total_res[index] += nums[index]
         total_res = [*total_res, 'total']
         print('\t' + '\t'.join(str(item) for item in total_res))
+
+
+def generate_output(params):
+    return '\t' + '\t'.join(str(param) for param in params)
+
+
+if __name__ == "__main__":
+    import sys
+    import argparse
+
+    # No arguments: better to use sys.argv than argparse
+    if len(sys.argv) <= 1:
+        std_in = sys.stdin.buffer.read()
+        params = count_from_bytes(std_in, [], '')
+        res = generate_output(params)
+        sys.exit(res)
+
+    handle_input()

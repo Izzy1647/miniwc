@@ -58,11 +58,6 @@ class TestWC(unittest.TestCase):
             b'wc: illegal option --tyt\n\nusage: wc [-clw] [file ...]\n\n'
         )
 
-        self.assertEqual(
-            subprocess.check_output('python3 wc.py -m testinputs/emoji.txt', shell=True),
-            b'We don\xe2\x80\x99t handle that situation yet!\n'
-        )
-
     def test_multiple_paths(self):
         self.assertEqual(
             subprocess.check_output('python3 wc.py testinputs/emoji.txt testinputs/html.html', shell=True),
@@ -76,12 +71,6 @@ class TestWC(unittest.TestCase):
             b'\t2\t3\t11\ttestinputs/emoji.txt\n'
             b'wc: testinputs/html.htm: open: No such file or directory\n'
             b'\t2\t3\t11\ttotal\n'
-        )
-
-    def test_empty_inputs(self):
-        self.assertEqual(
-            subprocess.check_output('python3 wc.py', shell=True),
-            b'We don\xe2\x80\x99t handle that situation yet!\n'
         )
 
     def test_slash_inputs(self):
